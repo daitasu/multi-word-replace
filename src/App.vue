@@ -23,6 +23,15 @@ const wordsets = ref<Item[]>(
 const originalSentence = ref('');
 const newSentence = ref('');
 
+const clickAdd = (): void => {
+  const innerWordset = wordsets.value;
+  innerWordset.push({
+    originalVal: '',
+    newVal: ''
+  })
+  wordsets.value = innerWordset;
+}
+
 const clickReplace = (): void => {
   let innerNewSentence = originalSentence.value;
 
@@ -62,8 +71,12 @@ const notifyError = (): void => {
 };
 
 const onBlur = () => {
+  // 空欄を除去
+  const innerWordset = wordsets.value.filter(wordset => {
+    return !!wordset.originalVal && !! wordset.newVal
+  })
   // ブラウザ上に単語セットを保存する
-  LocalStorage.set('wordsets', wordsets.value)
+  LocalStorage.set('wordsets', innerWordset)
 }
 
 onMounted(() => {
@@ -93,6 +106,11 @@ onMounted(() => {
           <q-input v-model="wordset.newVal" bg-color="white" filled label="置換後の単語" placeholder="ヤマダ" @blur="onBlur" />
         </div>
       </div>
+      <div class="word-fields row">
+        <div class="add-word col-12">
+          <q-btn icon="add" color="primary" label="単語のセットを追加" @click="clickAdd" />
+        </div>
+      </div>
     </div>
     <div class="container">
       <h2>2. 単語を置換する文章を記入してください</h2>
@@ -116,7 +134,7 @@ onMounted(() => {
             type="textarea"
           />
           <div class="actions">
-            <q-btn color="primary" label="置換する" @click="clickReplace" />
+            <q-btn color="primary" label=" 文章を置換" @click="clickReplace" />
           </div>
         </div>
         <div class="col-1">
@@ -159,6 +177,9 @@ onMounted(() => {
     .word-field {
       padding: 8px 16px;
       max-width: 350px;
+    }
+    .add-word {
+      margin: 16px 0 0;
     }
   }
   .sentence-fields {
