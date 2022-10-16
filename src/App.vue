@@ -1,13 +1,14 @@
 <script setup lang="ts">
-import { copyToClipboard, LocalStorage } from 'quasar';
+import { copyToClipboard, LocalStorage, useQuasar } from 'quasar';
 import { onMounted, ref } from 'vue'
-
-const INITIAL_VALUE_LENGTH = 5;
 
 type Item = {
   originalVal: string
   newVal: string
 }
+
+const INITIAL_VALUE_LENGTH = 5;
+const $q = useQuasar();
 
 const wordsets = ref<Item[]>(
   new Array<Item | null>(INITIAL_VALUE_LENGTH)
@@ -19,7 +20,6 @@ const wordsets = ref<Item[]>(
       }
     })
 );
-
 const originalSentence = ref('');
 const newSentence = ref('');
 
@@ -33,16 +33,32 @@ const clickReplace = (): void => {
     innerNewSentence = innerNewSentence.replace(new RegExp(wordset.originalVal,'g'), wordset.newVal);
   }
   newSentence.value = innerNewSentence;
+
+  notifySuccess('置換')
 };
 
 const clickCopy = (): void => {
   copyToClipboard(newSentence.value)
-    .then(() => {
-      // success!
-    })
-    .catch(() => {
-      // fail
-    })
+    .then(() => notifySuccess('コピー'))
+    .catch(notifyError)
+};
+
+const notifySuccess = (value: string): void => {
+  $q.notify({
+      type: 'positive',
+      message: `${value}しました`,
+      icon: 'done',
+      timeout: 1000
+  })
+};
+
+const notifyError = (): void => {
+  $q.notify({
+    type: 'negative',
+    message: 'エラーが発生しました',
+    icon: 'warning',
+    timeout: 1000
+  })
 };
 
 const onBlur = () => {
