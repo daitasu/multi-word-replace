@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { copyToClipboard } from 'quasar';
-import { ref } from 'vue'
+import { copyToClipboard, LocalStorage } from 'quasar';
+import { onMounted, ref } from 'vue'
 
 const INITIAL_VALUE_LENGTH = 5;
 
@@ -9,15 +9,15 @@ type Item = {
   newVal: string
 }
 
-const words = ref(
+const wordsets = ref<Item[]>(
   new Array<Item | null>(INITIAL_VALUE_LENGTH)
-  .fill(null)
-  .map(() => {
-    return {
-      originalVal: '',
-      newVal: ''
-    }
-  })
+    .fill(null) // 同じオブジェクト参照を持ってしまうためnullで初期値生成を行いmapする
+    .map(() => {
+      return {
+        originalVal: '',
+        newVal: ''
+      }
+    })
 );
 
 const originalSentence = ref('');
@@ -26,8 +26,8 @@ const newSentence = ref('');
 const clickReplace = (): void => {
   let innerNewSentence = originalSentence.value;
 
-  for (let i = 0; i < words.value.length; i++) {
-    const wordset = words.value[i];
+  for (let i = 0; i < wordsets.value.length; i++) {
+    const wordset = wordsets.value[i];
     if (!wordset.originalVal || !wordset.newVal) continue;
     
     innerNewSentence = innerNewSentence.replace(new RegExp(wordset.originalVal,'g'), wordset.newVal);
@@ -44,27 +44,43 @@ const clickCopy = (): void => {
       // fail
     })
 };
+
+const onBlur = () => {
+  // ブラウザ上に単語セットを保存する
+  LocalStorage.set('wordsets', wordsets.value)
+}
+
+onMounted(() => {
+  // ブラウザ上に保存している単語セットを適用する
+  const value = LocalStorage.getItem<Item[]>('wordsets')
+  if (!value) return;
+  wordsets.value = value;
+});
 </script>
 
 <template>
     <h1>複数単語置換ツール「まるちぇん」</h1>
-    <div class="container">入力した文章の中で、指定した複数の単語を置換した文章を生成してくれるツールです。</div>
     <div class="container">
-      <h2>置換したい単語のセットを記入してください</h2>
-      <div v-for="wordset in words" class="word-fields row">
+      入力した文章の中で、指定した複数の単語を置換した文章を生成してくれるツールです。
+    </div>
+    <div class="container">
+      <h2>1. 置換したい単語のセットを記入してください</h2>
+      <p class="caption">※ 指定した単語のセットは閲覧端末のブラウザ上に保存されます。端末やブラウザの変更時には引き継がれないためご注意ください</p>
+      <div v-for="wordset in wordsets" class="word-fields row">
         <div class="col-5 word-field">
-          <q-input v-model="wordset.originalVal" bg-color="white" filled label="置換元の単語" placeholder="山田" />
+          <q-input v-model="wordset.originalVal" bg-color="white" filled label="置換元の単語" placeholder="山田" @blur="onBlur" />
         </div>
         <div class="col-1">
           <q-icon name="double_arrow" size="2em" />
         </div>
         <div class="col-5 word-field">
-          <q-input v-model="wordset.newVal" bg-color="white" filled label="置換後の単語" placeholder="ヤマダ" />
+          <q-input v-model="wordset.newVal" bg-color="white" filled label="置換後の単語" placeholder="ヤマダ" @blur="onBlur" />
         </div>
       </div>
     </div>
     <div class="container">
-      <h2>単語を置換する文章を記入してください</h2>
+      <h2>2. 単語を置換する文章を記入してください</h2>
+      <p class="caption">※ 文章は保存されず破棄されます。コピーしてご利用ください。</p>
       <div class="sentence-fields row">
         <div class="col-5 sentence-field">
           <p>置換元となる文章</p>
@@ -114,6 +130,11 @@ const clickCopy = (): void => {
   margin: 8px 0 40px;
   padding: 8px 16px;
   font-size: 16px;
+
+  .caption {
+    color: #aaa;
+    margin: 0 0 16px;
+  }
 
   .word-fields {
     justify-content: center;
