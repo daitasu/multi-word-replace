@@ -19,11 +19,20 @@ const words = ref(
     }
   })
 );
+
 const originalSentence = ref('');
 const newSentence = ref('');
 
 const clickReplace = (): void => {
-  console.log(originalSentence.value);
+  let innerNewSentence = originalSentence.value;
+
+  for (let i = 0; i < words.value.length; i++) {
+    const wordset = words.value[i];
+    if (!wordset.originalVal || !wordset.newVal) continue;
+    
+    innerNewSentence = innerNewSentence.replace(new RegExp(wordset.originalVal,'g'), wordset.newVal);
+  }
+  newSentence.value = innerNewSentence;
 };
 
 const clickCopy = (): void => {
@@ -42,15 +51,15 @@ const clickCopy = (): void => {
     <div class="container">入力した文章の中で、指定した複数の単語を置換した文章を生成してくれるツールです。</div>
     <div class="container">
       <h2>置換したい単語のセットを記入してください</h2>
-      <div v-for="word in words" class="word-fields row">
+      <div v-for="wordset in words" class="word-fields row">
         <div class="col-5 word-field">
-          <q-input v-model="word.originalVal" bg-color="white" filled label="置換元の単語" placeholder="山田" />
+          <q-input v-model="wordset.originalVal" bg-color="white" filled label="置換元の単語" placeholder="山田" />
         </div>
         <div class="col-1">
           <q-icon name="double_arrow" size="2em" />
         </div>
         <div class="col-5 word-field">
-          <q-input v-model="word.newVal" bg-color="white" filled label="置換後の単語" placeholder="ヤマダ" />
+          <q-input v-model="wordset.newVal" bg-color="white" filled label="置換後の単語" placeholder="ヤマダ" />
         </div>
       </div>
     </div>
